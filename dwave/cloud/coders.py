@@ -22,6 +22,7 @@ try:
 except ImportError:
     from typing_extensions import NotRequired, TypedDict
 
+from dwave.cloud.utils.logging import timed
 from dwave.cloud.utils.qubo import uniform_get, active_qubits
 
 __all__ = [
@@ -45,6 +46,7 @@ class QuadraticProblem(TypedDict):
     offset: NotRequired[float]
 
 
+@timed
 def encode_problem_as_qp(solver: 'dwave.cloud.solver.StructuredSolver',
                          linear: Union[List[float], Dict[int, float]],
                          quadratic: Dict[Tuple[int, int], float],
@@ -263,6 +265,7 @@ def _decode_doubles(message):
     return struct.unpack('<' + ('d' * (len(binary) // 8)), binary)
 
 
+@timed
 def decode_qp_numpy(msg, return_matrix=True):
     """Decode SAPI response, results in a `qp` format, explicitly using numpy.
     If numpy is not installed, the method will fail.

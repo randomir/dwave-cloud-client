@@ -15,6 +15,7 @@
 """Logging utilities for private and Ocean-internal use."""
 
 import datetime
+import functools
 import inspect
 import io
 import itertools
@@ -23,6 +24,7 @@ import orjson
 import os
 import re
 import sys
+import time
 import types
 import typing
 
@@ -290,3 +292,24 @@ def get_caller_name(depth: int = 0) -> str:
         raise ValueError("non-negative integer required for 'depth'")
 
     return fast_stack(max_depth=depth + 2)[depth + 1].function
+
+
+def timed(f):
+    """Decorate `f` with logging "begin" and "end" statements."""
+
+    logger = logging.getLogger(__name__)
+    name = f"{f.__module__}.{f.__name__}"
+
+    @functools.wraps(f)
+    def wrapped(*args, **kwargs):
+        logger.debug(f"{name} called",
+                     extra=dict(tag=f"{name}", phase="begin"))
+        start = time.perf_counter()
+        try:
+            return f(*args, **kwargs)
+        finally:
+            dt = time.perf_counter() - start
+            logger.debug(f"{name} called",
+                         extra=dict(tag=f"{name}", phase="end", duration=dt))
+
+    return wrapped

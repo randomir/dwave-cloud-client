@@ -76,7 +76,7 @@ from dwave.cloud.events import dispatches_events
 from dwave.cloud.utils.decorators import retried
 from dwave.cloud.utils.exception import is_caused_by
 from dwave.cloud.utils.http import PretimedHTTPAdapter, BaseUrlSession, default_user_agent
-from dwave.cloud.utils.logging import get_caller_name
+from dwave.cloud.utils.logging import get_caller_name, timed
 from dwave.cloud.utils.time import datetime_to_timestamp, utcnow
 
 __all__ = ['Client']
@@ -404,6 +404,7 @@ class Client(object):
         return pluck(self.config, config_path)
 
     @classmethod
+    @timed
     def from_config(cls, config_file=None, profile=None, client=None, **kwargs):
         """Client factory method to instantiate a client instance from configuration.
 
@@ -455,11 +456,14 @@ class Client(object):
                 Invalid (non-existing) profile name.
 
         """
+        logger.debug("Client.from_config(%r, %r, %r, %r)",
+                     config_file, profile, client, kwargs,
+                     extra=dict(tag='client-from-config-begin'))
 
         # load configuration from config file(s) and environment
         config = load_config(config_file=config_file, profile=profile,
                              client=client, **kwargs)
-        logger.debug("Config loaded: %r", config)
+        logger.debug("Config loaded: %r", config, extra=dict(tag='config-loaded'))
 
         from dwave.cloud.client import qpu, sw, hybrid
         _clients = {
@@ -473,9 +477,11 @@ class Client(object):
         logger.debug("Creating %s.Client() with: %r", _client, config)
         return _clients[_client](**config)
 
+    @timed
     @dispatches_events('client_init')
     def __init__(self, **kwargs):
-        logger.debug("Client init called with: %r", kwargs)
+        logger.debug("Client init called with: %r", kwargs,
+                     extra=dict(tag='client-init-begin'))
 
         # insert deprecated config properties that proxy values from the new `Client.config`
         for legacy_property, config_path in Client._DEPRECATED_CONFIG_PROPERTIES_MAP.items():
@@ -502,7 +508,8 @@ class Client(object):
 
         # resolve endpoints using region
         resolve_endpoints(self.config, inplace=True)
-        logger.debug("Final client config=%r", self.config)
+        logger.debug("Final client config=%r", self.config,
+                     extra=dict(tag='client-config-resolved'))
 
         # sanity check
         if not self.config.endpoint:
@@ -564,6 +571,9 @@ class Client(object):
         self._download_answer_executor = \
             ThreadPoolExecutor(self._DOWNLOAD_ANSWER_THREAD_COUNT)
 
+        logger.debug("Client initialized", extra=dict(tag='client-init-end'))
+
+    @timed
     def create_session(self):
         """Create a new requests session based on client's (self) params.
 
@@ -603,6 +613,7 @@ class Client(object):
 
         return session
 
+    @timed
     def close(self):
         """Perform a clean shutdown.
 
@@ -624,6 +635,8 @@ class Client(object):
             >>> client.close()    # doctest: +SKIP
 
         """
+        logger.debug("Closing client.", extra=dict(tag='client-close-begin'))
+
         # Finish all the work that requires the connection
         logger.debug("Joining submission queue")
         self._submission_queue.join()
@@ -668,6 +681,8 @@ class Client(object):
         if solvers_session:
             solvers_session.close()
 
+        logger.debug("Closing client.", extra=dict(tag='client-close-end'))
+
     def __enter__(self):
         """Let connections be used in with blocks."""
         return self
@@ -697,6 +712,7 @@ class Client(object):
         """
         return True
 
+    @timed
     def get_regions(self, refresh: bool = False) -> Dict[str, Dict[str, str]]:
         """Retrieve available API regions.
 
@@ -725,6 +741,7 @@ class Client(object):
         return {r.code: {"name": r.name, "endpoint": r.endpoint} for r in rs}
 
     @property
+    @timed
     def solvers_session(self) -> api.resources.Solvers:
         session = getattr(self, '_solvers_session', None)
 
@@ -738,6 +755,7 @@ class Client(object):
 
         return session
 
+    @timed
     def _fetch_solvers(self,
                        name: Optional[str] = None,
                        refresh_: Optional[bool] = False,
@@ -816,6 +834,7 @@ class Client(object):
         self._load(future)
         return future
 
+    @timed
     @dispatches_events('get_solvers')
     def get_solvers(self, refresh=False, order_by='avg_load', **filters):
         """Return a filtered list of solvers handled by this client.
@@ -998,6 +1017,7 @@ class Client(object):
                 topology__type="pegasus"            # same as above, `eq` implied even for nested properties
             )
         """
+        logger.debug("get_solvers()", extra=dict(tag='get_solvers'))
 
         def covers_op(prop, val):
             """Does LHS `prop` (range) fully cover RHS `val` (range or item)?"""
@@ -1159,6 +1179,7 @@ class Client(object):
 
         return solvers
 
+    @timed
     def get_solver(self, name=None, refresh=False, **filters):
         """Load the configuration for a single solver.
 

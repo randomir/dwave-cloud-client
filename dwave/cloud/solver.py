@@ -47,6 +47,7 @@ from dwave.cloud.coders import (
 from dwave.cloud.computation import Future
 from dwave.cloud.concurrency import Present
 from dwave.cloud.events import dispatches_events
+from dwave.cloud.utils.logging import timed
 from dwave.cloud.utils.qubo import reformat_qubo_as_ising
 
 # Use numpy if available for fast encoding/decoding
@@ -1185,6 +1186,7 @@ class StructuredSolver(BaseSolver):
                             params, label=label, undirected_biases=True)
 
     @dispatches_events('sample')
+    @timed
     def _sample(self, type_, linear, quadratic, offset, params,
                 label=None, undirected_biases=False):
         """Internal method for `sample_ising`, `sample_qubo` and `sample_bqm`.
@@ -1327,6 +1329,7 @@ class StructuredSolver(BaseSolver):
 
         return parameters
 
+    @timed
     def check_problem(self, linear, quadratic):
         """Test if an Ising model matches the graph provided by the solver.
 

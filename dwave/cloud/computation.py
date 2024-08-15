@@ -27,6 +27,7 @@ Some :class:`Future` methods are blocking.
 """
 
 import io
+import logging
 import time
 import threading
 import functools
@@ -46,6 +47,8 @@ except ImportError:
     _numpy = False
 
 __all__ = ['Future']
+
+logger = logging.getLogger(__name__)
 
 
 @functools.total_ordering
@@ -899,8 +902,12 @@ class Future(object):
     def _load_result(self):
         """Get the result, waiting and decoding as needed."""
         if self._result is None:
+            logger.debug("waiting results", extra=dict(tag="load-result-wait"))
+
             # Wait for the query response
             self.wait(timeout=None)
+
+            logger.debug("got results", extra=dict(tag="load-result-wait-done"))
 
             # Check for other error conditions
             if self._exception is not None:
@@ -928,6 +935,8 @@ class Future(object):
                 sampleset.info.update(self._get_problem_info())
 
                 self._sampleset = weakref.ref(sampleset)
+
+            logger.debug("sampleset constructed", extra=dict(tag="load-result-sampleset"))
 
         return self._result
 

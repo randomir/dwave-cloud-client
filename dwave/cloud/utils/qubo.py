@@ -17,6 +17,8 @@
 import random
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
+from dwave.cloud.utils.logging import timed
+
 __all__ = []
 
 
@@ -74,6 +76,7 @@ def evaluate_ising(linear: Union[Mapping, Sequence],
     return energy
 
 
+@timed
 def active_qubits(linear: Union[Mapping, Sequence],
                   quadratic: Mapping
                   ) -> Set:
