@@ -26,7 +26,7 @@ numpy>=1.17.3
 dwave-optimization>=0.1.0
 
 # for solver mocks
-dwave-networkx>=0.8.10
+dwave-graphs>=1
 
 # dev requirements
 reno~=4.0
