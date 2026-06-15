@@ -11,6 +11,7 @@ orbs:
 
 environment:
   PIP_PROGRESS_BAR: 'off'
+  HOMEBREW_NO_ASK: '1'
 
 jobs:
   test-linux:
