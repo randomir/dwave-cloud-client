@@ -53,13 +53,12 @@ jobs:
             - env
 
       - run:
-          name: Install appropriate dimod version
+          name: Sweep dependencies
           command: |
             . env/bin/activate
+            pip uninstall dimod dwave-graphs -y
             if [[ "<< parameters.dependency-specifiers >>" ]]; then
               pip install << parameters.dependency-specifiers >>
-            else
-              pip uninstall dimod -y
             fi
 
       - run: &run-python-tests
@@ -313,7 +312,12 @@ workflows:
           matrix:
             parameters:
               python-version: &python-versions ["3.10", "3.11", "3.12", "3.13", "3.14"]
-              dependency-specifiers: ["", "dimod~=0.10.0", "dimod~=0.11.0", "dimod~=0.12.0"]
+              dependency-specifiers:
+                - ""    # without dimod and dwave-graphs
+                - "dimod~=0.10.0"
+                - "dimod~=0.11.0"
+                - "dimod~=0.12.0"
+                - "dimod~=0.12.22 dwave-graphs~=1.0"
             exclude:
               # dimod < 0.12 not supported on py311+
               - python-version: "3.11"

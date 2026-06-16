@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Use ``dwave-graphs`` instead of the deprecated ``dwave-networkx`` for QPU
+    graph generation.
